@@ -1,1 +1,1 @@
-### Projeto Para controle de manutenção
+### Projeto de sistema para controle de manutenção de um grupo de pousadas
