@@ -1,51 +1,51 @@
-### Projeto de sistema para controle de manutenção de um grupo de pousadas
+### System design for a maintenance control system for an inn group
 
-SISTEMA DE GESTÃO DE MANUTENÇÃO
+MAINTENANCE MANAGEMENT SYSTEM
 
 Backend:
-    FastAPI
-    SQLAlchemy
-    SQLite inicialmente
+FastAPI
+SQLAlchemy
+SQLite initially
 
-Arquitetura:
-    Multi-pousada
+Architecture:
+Multi-inn
 
-Pousadas:
-    Atlantic
-    Flor de Magnólia
-    Amada Terra
+Inns:
+Atlantic
+Flor de Magnólia
+Amada Terra
 
-Entidades:
-    Pousada
-    Usuário
-    UsuárioPousada
-    Espaço
-    Manutenção
-    Foto
-    Auditoria
+Entities:
+Inn
+User
+UserInn
+Space
+Maintenance
+Photo
+Audit
 
 Roles:
-    ADMIN
-    CHEFE
-    MANUTENCAO
+ADMIN
+CHIEF
+MAINTENANCE
 
 Frontend:
-    HTML
-    CSS
-    JavaScript
+HTML
+CSS
+JavaScript
 
-Comunicação:
-    REST API / JSON
+Communication:
+REST API / JSON
 
-Arquivos:
-    Storage externo ao banco
+Files:
+External storage (outside the database)
 
-Banco:
-    Uma base central
-    Dados isolados por pousada
+Database:
+Single central database
+Data isolated per inn
 
-Princípio:
-    Frontend não acessa banco diretamente.
-    Backend controla autenticação e autorização.
-    Toda manutenção pertence a um espaço.
-    Todo espaço pertence a uma pousada.
+Principles:
+Frontend does not access the database directly.
+Backend controls authentication and authorization.
+Every maintenance item belongs to a space.
+Every space belongs to an inn.
