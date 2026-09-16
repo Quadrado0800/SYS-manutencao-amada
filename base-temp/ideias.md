@@ -5,6 +5,9 @@
 
 - Trazer o "mapa de UH's" para o sistema 
 - Integrar com ENTRADAS e SAIDAS do desbravador
+- Adicionar sistema de "Prioridade"
+-
+-
 - Integrar o git collab !!!
-
+- 
 
