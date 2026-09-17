@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão de Manutenção</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Pousada <span>Atlantic</span></div>
+    <div class="login-sub">Sistema de Gestão de Manutenção</div>
+    <div class="login-field">
+      <label>Usuário</label>
+      <input type="text" id="login-user" placeholder="Digite seu usuário" autocomplete="username">
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-pass" placeholder="Digite sua senha" autocomplete="current-password">
+    </div>
+    <button class="login-btn" id="login-btn">Entrar</button>
+    <div class="login-error" id="login-error">Usuário ou senha incorretos.</div>
+    <div class="login-role-badge" id="login-hint">admin / chefe / manutencao</div>
+  </div>
+</div>
+
+<header class="header" id="app-header" style="display:none">
+  <div class="header-logo">Pousada <span>Atlantic</span></div>
+  <div class="header-center">
+    <button class="nav-btn active" id="nav-espacos" onclick="showPage('espacos')">🏨 Espaços</button>
+    <button class="nav-btn" id="nav-relatorios" onclick="showPage('relatorios')">📊 Relatórios</button>
+  </div>
+  <div class="header-right">
+    <div class="header-stats">
+      <div class="h-stat">
+        <div class="h-stat-val" id="hdr-pending">0</div>
+        <div class="h-stat-lbl">pendentes</div>
+      </div>
+      <div class="h-stat">
+        <div class="h-stat-val" id="hdr-events">0</div>
+        <div class="h-stat-lbl">registros</div>
+      </div>
+    </div>
+    <span class="user-badge" id="user-badge">—</span>
+    <button class="logout-btn" id="logout-btn">Sair</button>
+  </div>
+</header>
+
+<!-- ESPAÇOS PAGE -->
+<div class="app" id="page-espacos" style="display:none">
+  <aside class="sidebar">
+    <div class="sidebar-search">
+      <input type="text" id="search-input" placeholder="🔍  Buscar espaço…" oninput="filterSidebar(this.value)">
+    </div>
+    <div id="sidebar-list"></div>
+  </aside>
+  <main class="main" id="main">
+    <div class="main-empty">
+      <div style="font-size:48px">🏨</div>
+      <p>Selecione um espaço na lista ao lado</p>
+    </div>
+  </main>
+</div>
+
+<!-- RELATÓRIOS PAGE -->
+<div id="page-relatorios" style="display:none; height:calc(100vh - 56px); overflow-y:auto;">
+  <div class="reports-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+      <div class="reports-title">📊 Relatórios de Manutenção</div>
+      <button class="btn btn-outline" onclick="printReport()">🖨️ Imprimir / Exportar</button>
+    </div>
+    <div class="report-filters">
+      <div class="rf-group">
+        <label class="rf-label">Andar / Área</label>
+        <select class="rf-select" id="rf-floor" onchange="renderReport()">
+          <option value="">Todos</option>
+          <option>Cobertura</option>
+          <option>4º Andar</option>
+          <option>3º Andar</option>
+          <option>2º Andar</option>
+          <option>1º Andar</option>
+          <option>Térreo</option>
+        </select>
+      </div>
+      <div class="rf-group">
+        <label class="rf-label">Tipo</label>
+        <select class="rf-select" id="rf-type" onchange="renderReport()">
+          <option value="">Todos</option>
+          <option value="pintura">🖌️ Pintura / Reparo</option>
+          <option value="eletrica">⚡ Elétrica</option>
+          <option value="hidraulica">💧 Hidráulica</option>
+          <option value="limpeza">🧹 Limpeza</option>
+          <option value="mobiliario">🪑 Mobiliário</option>
+          <option value="ocorrencia">⚠️ Ocorrência</option>
+        </select>
+      </div>
+      <div class="rf-group">
+        <label class="rf-label">Status</label>
+        <select class="rf-select" id="rf-status" onchange="renderReport()">
+          <option value="">Todos</option>
+          <option value="concluido">✅ Concluído</option>
+          <option value="pendente">🕐 Pendente</option>
+          <option value="em_andamento">🔧 Em andamento</option>
+        </select>
+      </div>
+      <div class="rf-group">
+        <label class="rf-label">Responsável</label>
+        <input class="rf-input" id="rf-resp" placeholder="Nome…" oninput="renderReport()">
+      </div>
+      <div class="rf-group">
+        <label class="rf-label">Data início</label>
+        <input type="date" class="rf-input" id="rf-date-start" onchange="renderReport()">
+      </div>
+      <div class="rf-group">
+        <label class="rf-label">Data fim</label>
+        <input type="date" class="rf-input" id="rf-date-end" onchange="renderReport()">
+      </div>
+      <button class="btn btn-outline" onclick="clearReportFilters()" style="align-self:flex-end">✕ Limpar</button>
+    </div>
+    <div id="report-summary" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
+    <div id="report-container"></div>
+  </div>
+</div>
+
+<!-- MODAL NOVO REGISTRO -->
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Novo Registro</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tipo de ocorrência</label>
+          <select class="form-select" id="f-type">
+            <option value="pintura">🖌️ Pintura / Reparo</option>
+            <option value="eletrica">⚡ Elétrica</option>
+            <option value="hidraulica">💧 Hidráulica</option>
+            <option value="limpeza">🧹 Limpeza</option>
+            <option value="mobiliario">🪑 Mobiliário</option>
+            <option value="ocorrencia">⚠️ Ocorrência</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Data</label>
+          <input type="date" class="form-input" id="f-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Responsável</label>
+        <input type="text" class="form-input" id="f-resp" placeholder="Ex: João Silva">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Descrição do serviço / ocorrência</label>
+        <textarea class="form-textarea" id="f-desc" placeholder="Descreva o que foi feito ou o problema encontrado…"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="f-status">
+          <option value="concluido">✅ Concluído</option>
+          <option value="pendente">🕐 Pendente</option>
+          <option value="em_andamento">🔧 Em andamento</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Valor gasto (R$)</label>
+          <div class="cost-val-wrap"><span>R$</span><input type="number" class="form-input" id="f-valor" min="0" step="0.01" placeholder="0,00"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Categoria de custo</label>
+          <select class="form-select" id="f-custo-cat">
+            <option value="material">🧱 Material</option>
+            <option value="mao_de_obra">👷 Mão de obra</option>
+            <option value="equipamento">🔧 Equipamento</option>
+            <option value="outro">📦 Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fotos</label>
+        <div class="photo-upload-area" id="upload-area" onclick="document.getElementById('f-photos').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleDrop(event)">
+          <input type="file" id="f-photos" multiple accept="image/*" onchange="handlePhotoSelect(this.files)">
+          <div class="photo-upload-label">📷 Clique ou arraste fotos aqui</div>
+        </div>
+        <div class="photo-preview-row" id="photo-previews"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Salvar registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
+  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

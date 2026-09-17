@@ -19,6 +19,7 @@
 
 - ler o começo dos prompts em docs/prompts para verificar se é necessario anexar o html template junto
 
+==================================================
 
-
+adicionado novo campo a "manutenção" "PRIORIDADE" adicionado, podendo assumir os valores de "alta prioridade", "Media" e "Baixa"
 
