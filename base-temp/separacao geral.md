@@ -7,11 +7,12 @@
 | Fotos / Storage  | Confort             |
 
 ==================================================
-
-| Relatórios       | isaac               |
-| Testes           | isaac               |
+|Bloco             | Responsável inicial |
+|------------------|---------------------|
 | Frontend         | Isaac               |
 | Migração do HTML | Isaac               |
+| Relatórios       | isaac               |
+| Testes           | isaac               |
 | Deploy           | Isaac               |
 
 - Sempre utilizar o docs/contrato.md
