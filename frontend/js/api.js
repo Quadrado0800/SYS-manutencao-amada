@@ -597,6 +597,18 @@ export const auditoriaApi = {
 
 
 /* ============================================================
+    API DE RESPONSAVEIS
+   ============================================================ */
+
+funcionariosManutencaoApi: {
+  list(pousadaId) {
+    return apiGet(
+      `/pousadas/${pousadaId}/funcionarios-manutencao`
+    );
+  }
+};
+
+/* ============================================================
    EXPORT DEFAULT
    ============================================================ */
 

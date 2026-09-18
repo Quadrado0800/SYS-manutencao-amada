@@ -37,6 +37,17 @@ import {
   clearEspacos,
 } from './espacos.js';
 
+import {
+  initializeManutencoes,
+  setPousadaManutencoes,
+  clearManutencoes
+} from './manutencoes.js';
+
+import {
+  initializeRelatorios,
+  setPousadaRelatorios,
+  loadReport
+} from './relatorios.js';
 
 const appState = {
   initialized: false,
@@ -253,50 +264,40 @@ export async function loadPousadas() {
 // ============================================================================
 
 export async function selectPousada(pousadaId) {
+  if (!pousadaId) {
+    return;
+  }
+
   const pousada = appState.pousadas.find(
-    (item) =>
-      String(item.id) === String(pousadaId)
+    item => String(item.id) === String(pousadaId)
   );
 
   if (!pousada) {
-    setError('Pousada selecionada não encontrada.');
-    return null;
+    return;
   }
-
-  clearError();
 
   appState.currentPousadaId = pousada.id;
 
-  updatePousadaHeader();
-
-  // Informa ao módulo de espaços qual é a pousada atual.
   setPousada(pousada.id);
+  setPousadaManutencoes(pousada.id);
+  setPousadaRelatorios(pousada.id);
 
-  try {
-    setLoading(true);
+  await loadEspacos({
+    preserveSelection: false,
+    autoSelectFirst: true
+  });
 
-    await loadEspacos(pousada.id, {
-      preserveSelection: false,
-      autoSelectFirst: true,
-    });
+  window.dispatchEvent(
+    new CustomEvent('pousada:changed', {
+      detail: {
+        pousadaId: pousada.id,
+        pousada
+      }
+    })
+  );
 
-    notifyPousadaChanged(pousada);
-
-    return pousada;
-
-  } catch (error) {
-    const message =
-      error instanceof ApiError
-        ? error.message
-        : 'Não foi possível carregar os espaços da pousada.';
-
-    setError(message);
-
-    throw error;
-
-  } finally {
-    setLoading(false);
-  }
+  renderPousadaHeader();
+  renderPousadaSelector();
 }
 
 
@@ -560,7 +561,10 @@ export async function initializeApp() {
   appState.initialized = true;
 
   bindEvents();
+
   initializeEspacos();
+  initializeManutencoes();
+  initializeRelatorios();
 
   try {
     setLoading(true);

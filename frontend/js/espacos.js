@@ -328,20 +328,25 @@ export async function loadEspacos(pousadaId, options = {}) {
 
 export function selectEspaco(id) {
   const espaco = espacosState.espacos.find(
-    (item) => String(item.id) === String(id)
+    item => String(item.id) === String(id)
   );
 
   if (!espaco) {
-    return null;
+    return;
   }
 
   espacosState.espacoAtualId = espaco.id;
 
   renderSidebar();
 
-  notifyEspacoChanged(espaco);
-
-  return espaco;
+  window.dispatchEvent(
+    new CustomEvent('espaco:selected', {
+      detail: {
+        espacoId: espaco.id,
+        espaco
+      }
+    })
+  );
 }
 
 function notifyEspacoChanged(espaco) {

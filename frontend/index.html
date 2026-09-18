@@ -69,24 +69,25 @@
   <div class="reports-page">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
       <div class="reports-title">📊 Relatórios de Manutenção</div>
-      <button class="btn btn-outline" onclick="printReport()">🖨️ Imprimir / Exportar</button>
+        <button
+          class="btn btn-outline"
+          data-action="print-report"
+        >
+          🖨️ Imprimir / Exportar
+        </button>
     </div>
     <div class="report-filters">
+
       <div class="rf-group">
         <label class="rf-label">Andar / Área</label>
-        <select class="rf-select" id="rf-floor" onchange="renderReport()">
+        <select class="rf-select" id="rf-floor">
           <option value="">Todos</option>
-          <option>Cobertura</option>
-          <option>4º Andar</option>
-          <option>3º Andar</option>
-          <option>2º Andar</option>
-          <option>1º Andar</option>
-          <option>Térreo</option>
         </select>
       </div>
+
       <div class="rf-group">
         <label class="rf-label">Tipo</label>
-        <select class="rf-select" id="rf-type" onchange="renderReport()">
+        <select class="rf-select" id="rf-type">
           <option value="">Todos</option>
           <option value="pintura">🖌️ Pintura / Reparo</option>
           <option value="eletrica">⚡ Elétrica</option>
@@ -96,30 +97,67 @@
           <option value="ocorrencia">⚠️ Ocorrência</option>
         </select>
       </div>
+
       <div class="rf-group">
         <label class="rf-label">Status</label>
-        <select class="rf-select" id="rf-status" onchange="renderReport()">
+        <select class="rf-select" id="rf-status">
           <option value="">Todos</option>
           <option value="concluido">✅ Concluído</option>
           <option value="pendente">🕐 Pendente</option>
           <option value="em_andamento">🔧 Em andamento</option>
         </select>
       </div>
+
+      <div class="rf-group">
+        <label class="rf-label">Prioridade</label>
+        <select class="rf-select" id="rf-prioridade">
+          <option value="">Todas</option>
+          <option value="alta">🔴 Alta prioridade</option>
+          <option value="media">🟡 Media Prioridade</option>
+          <option value="baixa">🟢 Baixa Prioridade</option>
+        </select>
+      </div>
+
       <div class="rf-group">
         <label class="rf-label">Responsável</label>
-        <input class="rf-input" id="rf-resp" placeholder="Nome…" oninput="renderReport()">
+        <select id="f-responsavel">
+          <option value="">Não atribuído</option>
+        </select>
       </div>
+
       <div class="rf-group">
         <label class="rf-label">Data início</label>
-        <input type="date" class="rf-input" id="rf-date-start" onchange="renderReport()">
+        <input
+          type="date"
+          class="rf-input"
+          id="rf-date-start"
+        >
       </div>
+
       <div class="rf-group">
         <label class="rf-label">Data fim</label>
-        <input type="date" class="rf-input" id="rf-date-end" onchange="renderReport()">
+        <input
+          type="date"
+          class="rf-input"
+          id="rf-date-end"
+        >
       </div>
-      <button class="btn btn-outline" onclick="clearReportFilters()" style="align-self:flex-end">✕ Limpar</button>
+
+      <button
+        class="btn btn-outline"
+        data-action="clear-report-filters"
+        style="align-self:flex-end"
+      >
+        ✕ Limpar
+      </button>
+
     </div>
-    <div id="report-summary" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"></div>
+
+    <div
+      id="report-summary"
+      style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;"
+    ></div>
+
     <div id="report-container"></div>
   </div>
 </div>
@@ -129,7 +167,7 @@
   <div class="modal">
     <div class="modal-header">
       <span class="modal-title">Novo Registro</span>
-      <button class="modal-close" onclick="closeModal()">×</button>
+      <button type="button" class="modal-close" data-action="close-modal">×</button>
     </div>
     <div class="modal-body">
       <div class="form-row">
@@ -151,8 +189,18 @@
       </div>
       <div class="form-group">
         <label class="form-label">Responsável</label>
-        <input type="text" class="form-input" id="f-resp" placeholder="Ex: João Silva">
+        <input type="text" class="form-input" id="f-resp" placeholder="Ex: Cabeludo">
       </div>
+
+      <div class="form-group">
+        <label class="form-label">Prioridade</label>
+        <select class="form-select" id="f-prioridade">
+          <option value="alta">🔴 Alta prioridade</option>
+          <option value="media" selected>🟡 Media Prioridade</option>
+          <option value="baixa">🟢 Baixa Prioridade</option>
+        </select>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Descrição do serviço / ocorrência</label>
         <textarea class="form-textarea" id="f-desc" placeholder="Descreva o que foi feito ou o problema encontrado…"></textarea>
@@ -182,26 +230,31 @@
       </div>
       <div class="form-group">
         <label class="form-label">Fotos</label>
-        <div class="photo-upload-area" id="upload-area" onclick="document.getElementById('f-photos').click()"
-             ondragover="event.preventDefault();this.classList.add('drag')"
-             ondragleave="this.classList.remove('drag')"
-             ondrop="handleDrop(event)">
-          <input type="file" id="f-photos" multiple accept="image/*" onchange="handlePhotoSelect(this.files)">
-          <div class="photo-upload-label">📷 Clique ou arraste fotos aqui</div>
+        <div class="photo-upload-area" id="upload-area">
+          <input type="file" id="f-photos" multiple accept="image/*">
+          <div class="photo-upload-label">
+            📷 Clique ou arraste fotos aqui
+          </div>
+        </div>
         </div>
         <div class="photo-preview-row" id="photo-previews"></div>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="saveEntry()">Salvar registro</button>
+      <button type="button" class="btn btn-outline" data-action="close-modal">
+        Cancelar
+      </button>
+
+      <button type="button" class="btn btn-primary" data-action="save-maintenance">
+        Salvar registro
+      </button>
     </div>
   </div>
 </div>
 
 <!-- LIGHTBOX -->
-<div class="lightbox" id="lightbox" onclick="this.classList.remove('open')">
-  <button class="lightbox-close" onclick="document.getElementById('lightbox').classList.remove('open')">×</button>
+<div class="lightbox" id="lightbox">
+  <button type="button" class="lightbox-close" data-action="close-lightbox">×</button>
   <img id="lightbox-img" src="" alt="">
 </div>
 

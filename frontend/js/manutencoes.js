@@ -31,7 +31,12 @@ import {
   manutencoesApi,
   fotosApi,
   ApiError,
+  funcionariosManutencaoApi
 } from './api.js';
+
+import { 
+  canEdit as userCanEdit
+} from './auth.js';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -126,22 +131,19 @@ export const CUSTO_CATEGORIAS = {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const manutencoesState = {
+
   pousadaId: null,
   espacoId: null,
-
   manutencoes: [],
-
+  funcionarios: [],
   currentFilter: 'all',
   currentTab: 'historico',
-
   loading: false,
   saving: false,
-
   error: null,
-
   editingId: null,
-
   pendingPhotos: [],
+
 };
 
 
@@ -372,56 +374,89 @@ function getCostMeta(category) {
 // CARREGAMENTO
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function loadManutencoes({
-  pousadaId = manutencoesState.pousadaId,
-  espacoId = manutencoesState.espacoId,
-} = {}) {
-  if (!pousadaId) {
-    manutencoesState.manutencoes = [];
-    manutencoesState.error = 'Pousada não selecionada.';
-    return [];
+async function loadFuncionariosManutencao() {
+  if (!manutencoesState.pousadaId) {
+    manutencoesState.funcionarios = [];
+    return;
   }
 
-  manutencoesState.pousadaId = pousadaId;
-  manutencoesState.espacoId = espacoId;
-  manutencoesState.loading = true;
-  manutencoesState.error = null;
-
   try {
-    const params = {};
-
-    if (espacoId !== null && espacoId !== undefined) {
-      params.espaco_id = espacoId;
-    }
-
-    const response = await manutencoesApi.list(
-      pousadaId,
-      params
+    const response = await funcionariosManutencaoApi.list(
+      manutencoesState.pousadaId
     );
 
-    const data = Array.isArray(response)
-      ? response
-      : response?.data || [];
+    manutencoesState.funcionarios =
+      response?.data ?? response ?? [];
 
-    manutencoesState.manutencoes = data.map(normalizeManutencao);
-
-    return manutencoesState.manutencoes;
   } catch (error) {
-    manutencoesState.error = getErrorMessage(error);
-    manutencoesState.manutencoes = [];
+    console.error(
+      'Erro ao carregar funcionários da manutenção:',
+      error
+    );
 
-    renderManutencoesError(manutencoesState.error);
+    manutencoesState.funcionarios = [];
 
-    return [];
-  } finally {
-    manutencoesState.loading = false;
+    showMaintenanceError(
+      error instanceof ApiError
+        ? error.message
+        : 'Não foi possível carregar os funcionários da manutenção.'
+    );
   }
 }
 
+export async function loadManutencoes() {
+  if (!manutencoesState.pousadaId) {
+    return;
+  }
+  await loadFuncionariosManutencao();
+  
+  if (!manutencoesState.espacoId) {
+    return;
+  }
+
+  manutencoesState.loading = true;
+  manutencoesState.error = null;
+
+  renderCurrentMaintenanceView();
+
+  try {
+    const response = await manutencoesApi.list(
+      manutencoesState.pousadaId,
+      {
+        espaco_id: manutencoesState.espacoId
+      }
+    );
+
+    manutencoesState.manutencoes = Array.isArray(response)
+      ? response
+      : [];
+
+  } catch (error) {
+    console.error('Erro ao carregar manutenções:', error);
+
+    manutencoesState.error =
+      error instanceof ApiError
+        ? error.message
+        : 'Não foi possível carregar as manutenções.';
+
+    manutencoesState.manutencoes = [];
+
+  } finally {
+    manutencoesState.loading = false;
+    renderCurrentMaintenanceView();
+  }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONFIGURAÇÃO DO ESPAÇO
 // ─────────────────────────────────────────────────────────────────────────────
+
+export function setPousadaManutencoes(pousadaId) {
+  manutencoesState.pousadaId = pousadaId || null;
+  manutencoesState.espacoId = null;
+  manutencoesState.manutencoes = [];
+  manutencoesState.error = null;
+}
 
 export async function setEspacoManutencoes(
   pousadaId,
@@ -439,6 +474,25 @@ export async function setEspacoManutencoes(
   });
 }
 
+export function clearManutencoes() {
+  manutencoesState.pousadaId = null;
+  manutencoesState.espacoId = null;
+  manutencoesState.manutencoes = [];
+  manutencoesState.error = null;
+  manutencoesState.loading = false;
+}
+
+async function handleEspacoSelected(event) {
+  const { espacoId } = event.detail || {};
+
+  if (!espacoId) {
+    return;
+  }
+
+  manutencoesState.espacoId = espacoId;
+
+  await loadManutencoes();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FILTROS
@@ -532,7 +586,7 @@ export function renderCurrentMaintenanceView() {
 
   const totalGasto = calculateTotalCost(items);
 
-  const canEdit = document.body.dataset.canEdit === 'true';
+  const canEdit = userCanEdit();
 
   main.innerHTML = `
     <div class="summary-strip">
@@ -1197,102 +1251,24 @@ function renderValores(items, canEdit) {
 // MODAL
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function openMaintenanceModal(
-  maintenance = null
-) {
-  const modal =
-    document.getElementById('modal');
-
-  if (!modal) return;
-
-  manutencoesState.editingId =
-    maintenance?.id ?? null;
-
+export function openMaintenanceModal() {
   manutencoesState.pendingPhotos = [];
 
-  const title =
-    modal.querySelector('.modal-title');
+  document.getElementById('f-type').value = 'pintura';
+  document.getElementById('f-date').value =
+    new Date().toISOString().slice(0, 10);
 
-  if (title) {
-    title.textContent =
-      maintenance
-        ? 'Editar Registro'
-        : 'Novo Registro';
-  }
+  document.getElementById('f-resp').value = '';
+  document.getElementById('f-prioridade').value = 'media';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-status').value = 'concluido';
+  document.getElementById('f-valor').value = '';
+  document.getElementById('f-custo-cat').value = 'material';
 
-  setFieldValue(
-    'f-type',
-    maintenance?.tipo || 'pintura'
-  );
+  renderPhotoPreviews();
 
-  setFieldValue(
-    'f-date',
-    normalizeDateForInput(
-      maintenance?.data
-    ) || getTodayForInput()
-  );
-
-  setFieldValue(
-    'f-desc',
-    maintenance?.descricao || ''
-  );
-
-  setFieldValue(
-    'f-status',
-    maintenance?.status || 'pendente'
-  );
-
-  setFieldValue(
-    'f-valor',
-    maintenance?.valor || ''
-  );
-
-  setFieldValue(
-    'f-custo-cat',
-    maintenance?.categoriaCusto || 'material'
-  );
-
-  /*
-   * O campo antigo f-resp é texto livre.
-   *
-   * O backend usa responsavel_id.
-   * Não enviamos texto como se fosse responsavel_id.
-   *
-   * Caso posteriormente o index.html receba um
-   * <select id="f-responsavel">, esta função poderá
-   * preencher diretamente o ID.
-   */
-  const responsibleField =
-    document.getElementById('f-responsavel');
-
-  if (responsibleField) {
-    responsibleField.value =
-      maintenance?.responsavelId || '';
-  }
-
-  /*
-   * Prioridade:
-   *
-   * O index.html será atualizado para possuir
-   * <select id="f-prioridade">.
-   */
-  setFieldValue(
-    'f-prioridade',
-    maintenance?.prioridade || 'media'
-  );
-
-  const photoPreviews =
-    document.getElementById('photo-previews');
-
-  if (photoPreviews) {
-    photoPreviews.innerHTML = '';
-  }
-
-  modal.classList.add('open');
-
-  bindModalEvents();
+  document.getElementById('modal').classList.add('open');
 }
-
 
 export function closeMaintenanceModal() {
   const modal =
@@ -1367,47 +1343,56 @@ function normalizeDateForInput(value) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function handlePhotoSelect(fileList) {
-  if (!fileList) return;
+  const files = Array.from(fileList || []);
 
-  manutencoesState.pendingPhotos =
-    Array.from(fileList);
+  manutencoesState.pendingPhotos.push(...files);
 
   renderPhotoPreviews();
 }
 
+function handleDrop(event) {
+  event.preventDefault();
+
+  const uploadArea = document.getElementById('upload-area');
+
+  if (uploadArea) {
+    uploadArea.classList.remove('drag');
+  }
+
+  handlePhotoSelect(event.dataTransfer?.files);
+}
 
 function renderPhotoPreviews() {
-  const container =
-    document.getElementById(
-      'photo-previews'
-    );
+  const container = document.getElementById('photo-previews');
 
-  if (!container) return;
+  if (!container) {
+    return;
+  }
 
-  container.innerHTML =
-    manutencoesState.pendingPhotos
-      .map((file, index) => {
-        const url =
-          URL.createObjectURL(file);
+  container.innerHTML = '';
 
-        return `
-          <div class="photo-preview-item">
+  manutencoesState.pendingPhotos.forEach((file, index) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'photo-preview-item';
 
-            <img
-              src="${escapeHtml(url)}"
-              alt="${escapeHtml(file.name)}">
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.alt = file.name || `Foto ${index + 1}`;
 
-            <button
-              type="button"
-              class="photo-preview-remove"
-              data-pending-photo-remove="${index}">
-              ×
-            </button>
+    const removeButton = document.createElement('button');
+    removeButton.type = 'button';
+    removeButton.className = 'photo-preview-remove';
+    removeButton.textContent = '×';
+    removeButton.dataset.photoIndex = String(index);
 
-          </div>
-        `;
-      })
-      .join('');
+    removeButton.addEventListener('click', () => {
+      removePendingPhoto(index);
+    });
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(removeButton);
+    container.appendChild(wrapper);
+  });
 }
 
 
@@ -1433,191 +1418,87 @@ function removePendingPhoto(index) {
 // CRIAÇÃO / EDIÇÃO
 // ─────────────────────────────────────────────────────────────────────────────
 
-export async function saveMaintenance() {
+async function saveMaintenance() {
   if (manutencoesState.saving) {
     return;
   }
 
-  const pousadaId =
-    manutencoesState.pousadaId;
-
-  const espacoId =
-    manutencoesState.espacoId;
-
-  if (!pousadaId) {
-    showUserError(
-      'Nenhuma pousada selecionada.'
-    );
+  if (!manutencoesState.pousadaId) {
     return;
   }
 
-  if (!espacoId) {
-    showUserError(
-      'Nenhum espaço selecionado.'
-    );
+  if (!manutencoesState.espacoId) {
+    showMaintenanceError('Selecione um espaço antes de salvar.');
     return;
   }
 
   const descricao =
-    getFieldValue('f-desc').trim();
+    document.getElementById('f-desc')?.value.trim() || '';
 
   if (!descricao) {
-    showUserError(
+    showMaintenanceError(
       'Descreva o serviço ou ocorrência.'
     );
     return;
   }
 
-  const tipo =
-    getFieldValue('f-type');
-
-  const status =
-    getFieldValue('f-status');
-
-  const prioridade =
-    getFieldValue('f-prioridade') ||
-    'media';
-
-  if (
-    !Object.prototype.hasOwnProperty.call(
-      MANUTENCAO_PRIORIDADES,
-      prioridade
-    )
-  ) {
-    showUserError(
-      'Prioridade inválida.'
-    );
-    return;
-  }
-
-  const responsavelField =
-    document.getElementById(
-      'f-responsavel'
-    );
-
-  const responsavelId =
-    responsavelField
-      ? responsavelField.value || null
-      : null;
-
-  /*
-   * Não usamos o valor textual de f-resp como
-   * responsavel_id.
-   *
-   * O backend exige referência ao usuário.
-   */
   const payload = {
-    espaco_id: espacoId,
-
-    tipo,
-
-    data:
-      dateToApi(
-        getFieldValue('f-date')
-      ),
-
+    espaco_id: manutencoesState.espacoId,
+    tipo: document.getElementById('f-type')?.value,
     descricao,
-
-    status,
-
-    prioridade,
-
-    responsavel_id:
-      responsavelId,
-
-    valor:
-      normalizeMoneyInput(
-        getFieldValue('f-valor')
-      ),
-
+    status: document.getElementById('f-status')?.value,
+    prioridade: document.getElementById('f-prioridade')?.value,
+    data: document.getElementById('f-date')?.value || null,
+    responsavel_id: null,
+    valor: document.getElementById('f-valor')?.value || null,
     categoria_custo:
-      getFieldValue('f-custo-cat') ||
-      'outro',
+      document.getElementById('f-custo-cat')?.value || null
   };
 
+  const filesToUpload = [
+    ...manutencoesState.pendingPhotos
+  ];
+
   manutencoesState.saving = true;
+  renderCurrentMaintenanceView();
 
   try {
-    let response;
+    const maintenance = await manutencoesApi.create(
+      manutencoesState.pousadaId,
+      payload
+    );
 
-    if (manutencoesState.editingId) {
-      response =
-        await manutencoesApi.update(
-          manutencoesState.editingId,
-          payload
-        );
-    } else {
-      response =
-        await manutencoesApi.create(
-          pousadaId,
-          payload
-        );
-    }
+    const maintenanceId =
+      maintenance?.id ??
+      maintenance?.data?.id;
 
-    const saved =
-      normalizeManutencao(
-        response?.data ??
-        response
-      );
-
-    /*
-     * Se a API de criação/edição devolver o registro,
-     * usamos esse objeto como referência local.
-     */
-    if (saved.id) {
-      const index =
-        manutencoesState.manutencoes.findIndex(
-          item =>
-            String(item.id) ===
-            String(saved.id)
-        );
-
-      if (index >= 0) {
-        manutencoesState.manutencoes[index] =
-          saved;
-      } else {
-        manutencoesState.manutencoes.unshift(
-          saved
+    if (maintenanceId && filesToUpload.length > 0) {
+      for (const file of filesToUpload) {
+        await fotosApi.upload(
+          maintenanceId,
+          file
         );
       }
     }
 
+    manutencoesState.pendingPhotos = [];
+    
     closeMaintenanceModal();
 
-    /*
-     * As fotos só podem ser vinculadas depois que
-     * existe um ID de manutenção.
-     */
-    if (
-      saved.id &&
-      manutencoesState.pendingPhotos.length
-    ) {
-      await uploadMaintenancePhotos(
-        saved.id,
-        manutencoesState.pendingPhotos
-      );
-    }
-
-    /*
-     * Recarregamos do backend para garantir que o
-     * estado visual corresponde ao estado persistido.
-     */
     await loadManutencoes();
 
-    renderCurrentMaintenanceView();
-
   } catch (error) {
-    console.error(
-      'Erro ao salvar manutenção:',
-      error
-    );
+    console.error('Erro ao salvar manutenção:', error);
 
-    showUserError(
-      getErrorMessage(error)
+    showMaintenanceError(
+      error instanceof ApiError
+        ? error.message
+        : 'Não foi possível salvar a manutenção.'
     );
-
+    
   } finally {
     manutencoesState.saving = false;
+    renderCurrentMaintenanceView();
   }
 }
 
@@ -2235,6 +2116,7 @@ export function initializeManutencoes() {
    *
    * quando um espaço for selecionado.
    */
+  window.addEventListener('espaco:selected', handleEspacoSelected);
 
   manutencoesState.currentFilter =
     'all';
@@ -2242,4 +2124,4 @@ export function initializeManutencoes() {
   manutencoesState.currentTab =
     'historico';
 }
-```
+

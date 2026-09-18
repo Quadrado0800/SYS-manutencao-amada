@@ -566,6 +566,7 @@ export async function loadReport(
   await fetchReportData();
 
   if (!relatoriosState.error) {
+    populateFloorFilter();
     renderReport();
   }
 }
