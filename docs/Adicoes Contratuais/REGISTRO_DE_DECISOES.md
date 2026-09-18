@@ -41,6 +41,8 @@ Cada bloco deve:
 - evitar modificar outros blocos sem necessidade;
 - fornecer instruções de integração.
 
+OBS: A camada de Banco de Dados será mantida na pasta/bloco de Banco de Dados já existente no projeto, separada dos demais blocos do backend, evitando confusão entre responsabilidades.
+
 **Status:** `APROVADA`
 
 ## DG-004 — Arquitetura geral
@@ -169,6 +171,22 @@ O campo `tipo` deve ser genérico o suficiente para estruturas diferentes entre 
 
 **Status:** `APROVADA`
 
+## EN-003.5 — Usuário
+
+Campos conceituais:
+
+id
+nome
+email
+senha_hash
+ativo
+criado_em
+atualizado_em
+
+A senha não será armazenada em texto puro. O campo `senha_hash` armazenará somente o resultado do mecanismo de hash definido pelo bloco responsável pela autenticação.
+
+**Status:** `APROVADA`
+
 ## EN-004 — Manutenção
 Campos conceituais:
 
@@ -181,12 +199,28 @@ responsavel_id
 tipo
 descricao
 status
-data
+prioridade
+data_registro
+data_conclusao
 valor
 categoria_custo
 criado_em
 atualizado_em
 ```
+
+`data_registro` representa a data em que a manutenção foi registrada no sistema.
+
+`data_conclusao` representa a data em que a manutenção foi concluída e pode ser nula enquanto a manutenção não estiver concluída.
+
+A data de registro não é sobrescrita quando a manutenção é concluída; ambas as informações devem ser preservadas.
+
+`prioridade` aceita exclusivamente os valores:
+- alta
+- media
+- baixa
+
+Os valores acima são os valores oficiais de prioridade definidos no contrato da API.
+
 
 Status iniciais:
 
@@ -215,8 +249,26 @@ mao_de_obra
 equipamento
 outro
 ```
+**Status:** `APROVADA`
 
 A estrutura acima é conceitual e poderá receber decisões de implementação no bloco de Banco de Dados.
+
+Implementação: Os campos de status, tipo e categoria de custo serão implementados como String com restrições de integridade no banco, em vez de utilizar Enum rígido, mantendo flexibilidade para futura expansão dos valores.
+
+**Status:** `APROVADA`
+
+## EN-004.5 — Datas de manutenção
+
+A manutenção possuirá duas datas de negócio distintas:
+
+- `data_registro`: data em que a manutenção foi registrada;
+- `data_conclusao`: data em que a manutenção foi concluída.
+
+`data_conclusao` poderá ser nula enquanto a manutenção não estiver concluída.
+
+A `data_registro` será preservada mesmo após a conclusão da manutenção.
+
+Para a implementação inicial, essas duas datas serão representadas como `Date`, enquanto `criado_em` e `atualizado_em` serão timestamps (`DateTime`) técnicos do registro.
 
 **Status:** `APROVADA`
 
@@ -257,6 +309,31 @@ criado_em
 ```
 
 Objetivo: identificar quem realizou uma alteração, quando e o que foi alterado.
+
+**Status:** `APROVADA`
+
+## EN-007 — Implementação do campo prioridade
+
+O campo `prioridade` será armazenado como String no banco.
+
+Os valores permitidos serão restringidos no banco aos valores:
+- `alta`
+- `media`
+- `baixa`
+
+A validação da requisição também será responsabilidade do backend/API, mas a camada de banco deverá possuir uma restrição de integridade para impedir valores diferentes dos definidos.
+
+**Status:** `APROVADA`
+
+## EN-008 — Integridade dos relacionamentos multi-pousada
+
+O banco deverá preservar a consistência entre pousada, espaço e manutenção.
+
+Uma manutenção não poderá ser associada a um espaço pertencente a outra pousada.
+
+Da mesma forma, os vínculos de criação e responsabilidade da manutenção deverão respeitar a associação do usuário com a pousada correspondente.
+
+A implementação deverá utilizar as constraints e relacionamentos apropriados do banco/SQLAlchemy para reforçar essa integridade.
 
 **Status:** `APROVADA`
 
@@ -313,6 +390,19 @@ As permissões devem ser aplicadas no backend. O frontend não será responsáve
 
 **Status:** `APROVADA`
 
+## US-006 — Papel por pousada
+
+Um usuário poderá estar vinculado a mais de uma pousada.
+
+O papel do usuário será definido no vínculo `UsuárioPousada`, permitindo que o mesmo usuário possua papéis diferentes em pousadas diferentes.
+
+Exemplo conceitual:
+
+Usuário → Atlantic → MANUTENCAO
+Usuário → Amada Terra → CHEFE
+
+**Status:** `APROVADA`
+
 ---
 
 # 6. Segurança e Dados
@@ -337,7 +427,7 @@ O frontend não terá acesso direto ao banco. Toda comunicação com os dados oc
 ## VM-001 — Valores monetários
 Não utilizar `float` para valores monetários.
 
-Implementação específica: `PENDENTE`.
+Implementação específica: `Numeric(12, 2)` no SQLAlchemy.
 
 **Status:** `APROVADA`
 
@@ -479,6 +569,16 @@ A arquitetura deve favorecer manutenção e expansão, sem introduzir complexida
 
 **Status:** `APROVADA`
 
+## RA-004 — Preservação de dados históricos
+
+Dados operacionais e históricos não deverão ser apagados fisicamente de forma indiscriminada.
+
+Quando aplicável, registros como pousadas, espaços e usuários deverão utilizar desativação lógica por meio de seus campos de estado (`ativa`/`ativo`), preservando o histórico.
+
+Exclusões físicas em entidades dependentes deverão ser definidas conforme a natureza do dado e sem comprometer o histórico ou a auditoria.
+
+**Status:** `APROVADA`
+
 ---
 
 # 9. Metodologia de Desenvolvimento
@@ -515,7 +615,7 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 - estrutura definitiva dos relacionamentos no SQLAlchemy;
 - estratégia de migrations;
 - regras detalhadas de acesso de usuário a pousadas;
-- comportamento de exclusão de registros;
+- ~~comportamento de exclusão de registros;~~
 - regras detalhadas de auditoria;
 - convenção definitiva de nomes de tabelas/colunas;
 - estrutura de diretórios para fotos;
@@ -535,6 +635,7 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 | Data | Alteração | Responsável |
 |---|---|---|
 | 17/09/2026 | Criação inicial do registro | Confort |
+| 17/09/2026 | Definição de decisões de modelagem do bloco de Banco de Dados: prioridade, datas de manutenção, papel por pousada, estrutura mínima de usuário, valor monetário, integridade multi-pousada, preservação de histórico e organização da pasta do bloco | Confort |
 
 ---
 
