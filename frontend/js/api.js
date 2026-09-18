@@ -600,7 +600,7 @@ export const auditoriaApi = {
     API DE RESPONSAVEIS
    ============================================================ */
 
-funcionariosManutencaoApi: {
+export const funcionariosManutencaoApi = {
   list(pousadaId) {
     return apiGet(
       `/pousadas/${pousadaId}/funcionarios-manutencao`

@@ -1,4 +1,4 @@
-import { authApi, ApiError } from './api.js';
+import { authApi, ApiError, unwrapData } from './api.js';
 
 const AUTH_STORAGE_KEY = 'gestao_manutencao_auth';
 
@@ -57,6 +57,8 @@ function getAuthState() {
 function getCurrentUser() {
     return authState.user;
 }
+
+const getUser = getCurrentUser;
 
 function isAuthenticated() {
     return authState.isAuthenticated;
@@ -147,7 +149,9 @@ async function login(username, password) {
     authState.loading = true;
 
     try {
-        const user = await authApi.login(username, password);
+        const user = unwrapData(
+            await authApi.login({ username, password })
+        );
 
         setAuthState(user);
 
@@ -178,7 +182,7 @@ async function loadCurrentUser() {
     authState.loading = true;
 
     try {
-        const user = await authApi.me();
+        const user = unwrapData(await authApi.me());
 
         setAuthState(user);
 
@@ -262,6 +266,7 @@ export {
     restoreCachedUser,
     getAuthState,
     getCurrentUser,
+    getUser,
     isAuthenticated,
     hasRole,
     canEdit,
@@ -283,6 +288,7 @@ export default {
     restoreCachedUser,
     getAuthState,
     getCurrentUser,
+    getUser,
     isAuthenticated,
     hasRole,
     canEdit,

@@ -147,12 +147,14 @@ function clearError() {
 
 function showLoginScreen() {
   showElement('login-screen');
-  hideElement('app-container');
+  hideElement('app-header');
+  hideElement('page-espacos');
+  hideElement('page-relatorios');
 }
 
 function showApplication() {
   hideElement('login-screen');
-  showElement('app-container');
+  showElement('app-header');
 }
 
 
@@ -282,7 +284,7 @@ export async function selectPousada(pousadaId) {
   setPousadaManutencoes(pousada.id);
   setPousadaRelatorios(pousada.id);
 
-  await loadEspacos({
+  await loadEspacos(pousada.id, {
     preserveSelection: false,
     autoSelectFirst: true
   });
@@ -314,7 +316,31 @@ export async function selectPousada(pousadaId) {
 //
 
 export function renderPousadaSelector() {
-  // Intencionalmente vazio nesta etapa.
+  const header = getElement('app-header');
+
+  if (!header) return;
+
+  let selector = getElement('pousada-selector');
+
+  if (!selector) {
+    selector = document.createElement('select');
+    selector.id = 'pousada-selector';
+    selector.className = 'form-select';
+    selector.setAttribute('aria-label', 'Selecionar pousada');
+    selector.addEventListener('change', event => {
+      selectPousada(event.target.value);
+    });
+    header.querySelector('.header-center')?.prepend(selector);
+  }
+
+  selector.innerHTML = '<option value="">Selecione a pousada</option>';
+  getActivePousadas().forEach(pousada => {
+    const option = document.createElement('option');
+    option.value = pousada.id;
+    option.textContent = pousada.nome;
+    option.selected = String(pousada.id) === String(appState.currentPousadaId);
+    selector.appendChild(option);
+  });
 }
 
 
@@ -393,8 +419,8 @@ function updateNavigationUI() {
 // ============================================================================
 
 async function handleLogin() {
-  const usernameElement = getElement('username');
-  const passwordElement = getElement('password');
+  const usernameElement = getElement('login-user');
+  const passwordElement = getElement('login-pass');
 
   const username = usernameElement?.value?.trim() || '';
   const password = passwordElement?.value || '';
@@ -515,8 +541,8 @@ function bindEvents() {
 
 
   // Enter no campo de usuário/senha
-  const usernameInput = getElement('username');
-  const passwordInput = getElement('password');
+  const usernameInput = getElement('login-user');
+  const passwordInput = getElement('login-pass');
 
   [usernameInput, passwordInput]
     .filter(Boolean)

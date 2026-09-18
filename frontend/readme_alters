@@ -1,0 +1,61 @@
+# Alterações de integração do frontend com o Mock Backend
+
+Data: 18/09/2026
+
+Este documento registra somente os ajustes mínimos feitos para que o frontend
+consuma o contrato aprovado por meio do servidor em `mock_backend`.
+
+## Como executar
+
+Na raiz do projeto:
+
+```powershell
+cd mock_backend
+pip install -r requirements.txt
+uvicorn main:app --reload --port 8000
+```
+
+Depois, acesse `http://127.0.0.1:8000/`. O FastAPI agora entrega os arquivos
+de `frontend/` e a API no mesmo host e porta; portanto a URL relativa `/api`
+do cliente continua válida sem proxy, CORS adicional ou configuração manual.
+
+Login de demonstração: usuário `admin` e qualquer senha não vazia.
+
+## Alterações realizadas
+
+1. `js/api.js`
+   - corrigida a exportação de `funcionariosManutencaoApi`, necessária para o
+     endpoint contratual `GET /api/pousadas/{id}/funcionarios-manutencao`.
+
+2. `js/auth.js`
+   - login agora envia `{ username, password }`, conforme o contrato HTTP;
+   - respostas de login e `/auth/me` agora extraem o envelope `{ data }`;
+   - exportado `getUser` como alias compatível com o consumidor existente.
+
+3. `js/app.js`
+   - alinhados os IDs do formulário de login com `login-user` e `login-pass`;
+   - corrigida a chamada de carregamento de espaços para receber o ID da
+     pousada;
+   - substituído o contêiner inexistente por controle direto de cabeçalho e
+     páginas;
+   - adicionado seletor mínimo de pousada no cabeçalho, preenchido pela API.
+
+4. `index.html` e `js/manutencoes.js`
+   - o responsável do formulário deixou de ser texto livre e passou a ser um
+     `<select>` abastecido pela API;
+   - criação passa `responsavel_id` e `data_registro`;
+   - listagem de manutenções passa a ler `{ data, total }`;
+   - o objeto `responsavel` retornado pela API é exibido por seu `nome`;
+   - a interface usa `data_registro` como data exibida do registro, conforme
+     a decisão EN-004.5.
+
+5. `mock_backend/main.py`
+   - o FastAPI monta `../frontend` após as rotas da API. Assim, a página e as
+     rotas `/api/*` são atendidas pelo mesmo servidor local.
+
+## Limites que permanecem intencionais
+
+- O Mock continua temporário, com dados em memória e autenticação simulada.
+- O backend definitivo, banco, permissões completas por papel/pousada,
+  formato definitivo de dashboard e os filtros de relatório continuam sendo
+  trabalho separado e exigem as decisões documentais pendentes.

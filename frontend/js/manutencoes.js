@@ -193,6 +193,7 @@ function normalizeManutencao(item = {}) {
       'ocorrencia',
 
     data:
+      item.data_registro ??
       item.data ??
       item.date ??
       item.data_manutencao ??
@@ -219,6 +220,7 @@ function normalizeManutencao(item = {}) {
 
     responsavel:
       item.responsavel_nome ??
+      item.responsavel?.nome ??
       item.responsavel ??
       item.responsavel_name ??
       '',
@@ -388,6 +390,8 @@ async function loadFuncionariosManutencao() {
     manutencoesState.funcionarios =
       response?.data ?? response ?? [];
 
+    renderResponsavelOptions();
+
   } catch (error) {
     console.error(
       'Erro ao carregar funcionários da manutenção:',
@@ -427,9 +431,11 @@ export async function loadManutencoes() {
       }
     );
 
-    manutencoesState.manutencoes = Array.isArray(response)
-      ? response
-      : [];
+    manutencoesState.manutencoes = (
+      Array.isArray(response)
+        ? response
+        : response?.data ?? []
+    ).map(normalizeManutencao);
 
   } catch (error) {
     console.error('Erro ao carregar manutenções:', error);
@@ -1270,6 +1276,24 @@ export function openMaintenanceModal() {
   document.getElementById('modal').classList.add('open');
 }
 
+function renderResponsavelOptions() {
+  const select = document.getElementById('f-resp');
+
+  if (!select) return;
+
+  const selectedId = select.value;
+  select.innerHTML = '<option value="">Não atribuído</option>';
+
+  manutencoesState.funcionarios.forEach(funcionario => {
+    const option = document.createElement('option');
+    option.value = funcionario.id;
+    option.textContent = funcionario.nome;
+    select.appendChild(option);
+  });
+
+  select.value = selectedId;
+}
+
 export function closeMaintenanceModal() {
   const modal =
     document.getElementById('modal');
@@ -1448,8 +1472,10 @@ async function saveMaintenance() {
     descricao,
     status: document.getElementById('f-status')?.value,
     prioridade: document.getElementById('f-prioridade')?.value,
-    data: document.getElementById('f-date')?.value || null,
-    responsavel_id: null,
+    data_registro: document.getElementById('f-date')?.value || null,
+    responsavel_id: document.getElementById('f-resp')?.value
+      ? Number(document.getElementById('f-resp').value)
+      : null,
     valor: document.getElementById('f-valor')?.value || null,
     categoria_custo:
       document.getElementById('f-custo-cat')?.value || null
