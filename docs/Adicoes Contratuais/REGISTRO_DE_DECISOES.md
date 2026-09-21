@@ -337,6 +337,25 @@ A implementação deverá utilizar as constraints e relacionamentos apropriados 
 
 **Status:** `APROVADA`
 
+## EN-009 — Estratégia de integridade multi-pousada
+
+A integridade dos relacionamentos entre pousada, espaço e usuários será garantida em duas camadas:
+
+1. **Banco de Dados:** utilizar restrições de integridade, incluindo chaves estrangeiras compostas quando apropriado, para impedir associações entre entidades pertencentes a pousadas diferentes;
+2. **Backend:** realizar validações das regras de negócio antes das operações de persistência, fornecendo respostas adequadas para a aplicação.
+
+A camada de Banco de Dados será responsável pela integridade estrutural dos relacionamentos, enquanto o Backend também deverá validar essas regras antes de executar as operações.
+
+A implementação deverá garantir, entre outros pontos:
+
+- uma manutenção não poderá associar uma pousada a um espaço pertencente a outra pousada;
+- o usuário que criou uma manutenção deverá possuir vínculo com a pousada da manutenção;
+- o responsável por uma manutenção, quando informado, deverá possuir vínculo com a pousada da manutenção.
+
+A implementação específica das chaves estrangeiras compostas, relacionamentos e demais restrições será definida no bloco de Banco de Dados antes da implementação.
+
+**Status:** `APROVADA`
+
 ---
 
 # 5. Usuários e Permissões
@@ -612,7 +631,8 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 
 - mecanismo específico de autenticação/sessão;
 - algoritmo e biblioteca para hash de senhas;
-- estrutura definitiva dos relacionamentos no SQLAlchemy;
+- ~~estrutura definitiva dos relacionamentos no SQLAlchemy;~~
+- detalhes definitivos da implementação dos relacionamentos no SQLAlchemy e das restrições de integridade;
 - estratégia de migrations;
 - regras detalhadas de acesso de usuário a pousadas;
 - ~~comportamento de exclusão de registros;~~
@@ -636,6 +656,7 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 |---|---|---|
 | 17/09/2026 | Criação inicial do registro | Confort |
 | 17/09/2026 | Definição de decisões de modelagem do bloco de Banco de Dados: prioridade, datas de manutenção, papel por pousada, estrutura mínima de usuário, valor monetário, integridade multi-pousada, preservação de histórico e organização da pasta do bloco | Confort |
+| 21/09/2026 | Definição da estratégia de integridade multi-pousada: validação no Backend combinada com garantias de integridade no Banco de Dados, incluindo chaves estrangeiras compostas quando apropriado | Confort |
 
 ---
 
