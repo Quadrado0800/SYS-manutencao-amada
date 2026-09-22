@@ -6,9 +6,11 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     Numeric,
     String,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -62,12 +64,20 @@ class Pousada(Base):
     )
 
     manutencoes: Mapped[list["Manutencao"]] = relationship(
-    back_populates="pousada"
+        back_populates="pousada"
     )
 
 
 class Espaco(Base):
     __tablename__ = "espacos"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "pousada_id",
+            "id",
+            name="uq_espaco_pousada_id",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
@@ -129,7 +139,8 @@ class Espaco(Base):
     )
 
     manutencoes: Mapped[list["Manutencao"]] = relationship(
-    back_populates="espaco"
+        back_populates="espaco",
+        foreign_keys="Manutencao.espaco_id"
     )
 
 class Usuario(Base):
@@ -236,6 +247,23 @@ class Manutencao(Base):
             "categoria_custo IN ('material', 'mao_de_obra', 'equipamento', 'outro')",
             name="ck_manutencao_categoria_custo"
         ),
+        ForeignKeyConstraint(
+        ["pousada_id", "espaco_id"],
+        ["espacos.pousada_id", "espacos.id"],
+        name="fk_manutencao_espaco_pousada"
+        ),
+
+        ForeignKeyConstraint(
+        ["criado_por_id", "pousada_id"],
+        ["usuario_pousada.usuario_id", "usuario_pousada.pousada_id"],
+        name="fk_manutencao_criador_pousada"
+        ),
+
+        ForeignKeyConstraint(
+        ["responsavel_id", "pousada_id"],
+        ["usuario_pousada.usuario_id", "usuario_pousada.pousada_id"],
+        name="fk_manutencao_responsavel_pousada"
+        ),
     )
 
     id: Mapped[int] = mapped_column(
@@ -317,19 +345,20 @@ class Manutencao(Base):
         onupdate=datetime.utcnow
     )
     pousada: Mapped["Pousada"] = relationship(
-    back_populates="manutencoes"
+        back_populates="manutencoes"
     )
 
     espaco: Mapped["Espaco"] = relationship(
-    back_populates="manutencoes"
+        back_populates="manutencoes",
+        foreign_keys=[espaco_id]
     )
 
     criado_por: Mapped["Usuario"] = relationship(
-    back_populates="manutencoes_criadas",
-    foreign_keys=[criado_por_id]
+        back_populates="manutencoes_criadas",
+        foreign_keys=[criado_por_id]
     )
 
     responsavel: Mapped["Usuario | None"] = relationship(
-    back_populates="manutencoes_responsavel",
-    foreign_keys=[responsavel_id]
+        back_populates="manutencoes_responsavel",
+        foreign_keys=[responsavel_id]
     )
