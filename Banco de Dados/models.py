@@ -67,6 +67,9 @@ class Pousada(Base):
         back_populates="pousada"
     )
 
+    auditorias: Mapped[list["Auditoria"]] = relationship(
+        back_populates="pousada"
+    )
 
 class Espaco(Base):
     __tablename__ = "espacos"
@@ -191,13 +194,17 @@ class Usuario(Base):
     )
 
     manutencoes_criadas: Mapped[list["Manutencao"]] = relationship(
-    back_populates="criado_por",
-    foreign_keys="Manutencao.criado_por_id"
+        back_populates="criado_por",
+        foreign_keys="Manutencao.criado_por_id"
     )
 
     manutencoes_responsavel: Mapped[list["Manutencao"]] = relationship(
-    back_populates="responsavel",
-    foreign_keys="Manutencao.responsavel_id"
+        back_populates="responsavel",
+        foreign_keys="Manutencao.responsavel_id"
+    )
+
+    auditorias: Mapped[list["Auditoria"]] = relationship(
+        back_populates="usuario"
     )
 
 
@@ -361,4 +368,105 @@ class Manutencao(Base):
     responsavel: Mapped["Usuario | None"] = relationship(
         back_populates="manutencoes_responsavel",
         foreign_keys=[responsavel_id]
+    )
+
+    fotos: Mapped[list["Foto"]] = relationship(
+        back_populates="manutencao"
+    )
+    
+class Foto(Base):
+    __tablename__ = "fotos"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    manutencao_id: Mapped[int] = mapped_column(
+        ForeignKey("manutencoes.id"),
+        nullable=False
+    )
+
+    nome_arquivo: Mapped[str] = mapped_column(
+        String(255),
+        nullable=False
+    )
+
+    caminho: Mapped[str] = mapped_column(
+        String(500),
+        nullable=False
+    )
+
+    tamanho: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    mime_type: Mapped[str] = mapped_column(
+        String(100),
+        nullable=False
+    )
+
+    criada_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    manutencao: Mapped["Manutencao"] = relationship(
+        back_populates="fotos"
+    )
+
+class Auditoria(Base):
+    __tablename__ = "auditorias"
+
+    id: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True
+    )
+
+    pousada_id: Mapped[int] = mapped_column(
+        ForeignKey("pousadas.id"),
+        nullable=False
+    )
+
+    usuario_id: Mapped[int] = mapped_column(
+        ForeignKey("usuarios.id"),
+        nullable=False
+    )
+
+    entidade: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False
+    )
+
+    entidade_id: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False
+    )
+
+    acao: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False
+    )
+
+    dados_anteriores: Mapped[str | None] = mapped_column(
+        String(5000),
+        nullable=True
+    )
+
+    dados_novos: Mapped[str | None] = mapped_column(
+        String(5000),
+        nullable=True
+    )
+
+    criado_em: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow
+    )
+
+    pousada: Mapped["Pousada"] = relationship(
+        back_populates="auditorias"
+    )
+
+    usuario: Mapped["Usuario"] = relationship(
+        back_populates="auditorias"
     )

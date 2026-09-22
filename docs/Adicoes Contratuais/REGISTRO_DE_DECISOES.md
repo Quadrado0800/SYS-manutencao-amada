@@ -598,6 +598,18 @@ Exclusões físicas em entidades dependentes deverão ser definidas conforme a n
 
 **Status:** `APROVADA`
 
+## RA-005 — Política de exclusão e preservação de dados
+
+Dados cadastrais e históricos não serão fisicamente excluídos de forma indiscriminada.
+
+Quando aplicável, entidades como pousadas, espaços e usuários deverão ser desativadas por meio de seus respectivos campos de controle de atividade.
+
+Manutenções e registros de auditoria deverão ser preservados para manter o histórico do sistema.
+
+Registros de fotos poderão ser excluídos quando uma foto não dever mais permanecer associada à manutenção. O tratamento do arquivo físico e sua remoção do armazenamento serão responsabilidade do bloco de Fotos/Storage, enquanto o Banco de Dados deverá permitir a remoção do respectivo registro de foto.
+
+**Status:** `APROVADA`
+
 ---
 
 # 9. Metodologia de Desenvolvimento
@@ -658,6 +670,7 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 | 17/09/2026 | Definição de decisões de modelagem do bloco de Banco de Dados: prioridade, datas de manutenção, papel por pousada, estrutura mínima de usuário, valor monetário, integridade multi-pousada, preservação de histórico e organização da pasta do bloco | Confort |
 | 21/09/2026 | Definição da estratégia de integridade multi-pousada: validação no Backend combinada com garantias de integridade no Banco de Dados, incluindo chaves estrangeiras compostas quando apropriado | Confort |
 | 21/09/2026 | Definição da implementação da integridade multi-pousada: manutenção manterá as chaves estrangeiras simples e receberá chaves estrangeiras compostas adicionais para garantir a correspondência da pousada com espaço, criador e responsável | Confort |
+| 22/09/2026 | Definição da política de exclusão e preservação de dados: desativação de cadastros, preservação de manutenções e auditorias e possibilidade de exclusão de registros de fotos, com o arquivo físico sob responsabilidade do bloco de Fotos/Storage | Confort |
 
 ---
 
