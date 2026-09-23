@@ -644,7 +644,7 @@ Esta seção deve ser atualizada durante o desenvolvimento.
 - mecanismo específico de autenticação/sessão;
 - algoritmo e biblioteca para hash de senhas;
 - ~~estrutura definitiva dos relacionamentos no SQLAlchemy;~~
-- detalhes definitivos da implementação dos relacionamentos no SQLAlchemy e das restrições de integridade;
+- ~~detalhes definitivos da implementação dos relacionamentos no SQLAlchemy e das restrições de integridade;~~
 - estratégia de migrations;
 - regras detalhadas de acesso de usuário a pousadas;
 - ~~comportamento de exclusão de registros;~~
