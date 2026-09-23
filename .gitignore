@@ -1,0 +1,6 @@
+# Banco de dados local
+maintenance.db
+
+# Python
+__pycache__/
+*.py[cod]

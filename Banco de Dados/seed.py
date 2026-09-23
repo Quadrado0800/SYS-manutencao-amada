@@ -22,8 +22,15 @@ db = SessionLocal()
 
 try:
     for dados in pousadas_iniciais:
-        pousada = Pousada(**dados)
-        db.add(pousada)
+        pousada = (
+            db.query(Pousada)
+            .filter_by(slug=dados["slug"])
+            .first()
+        )
+
+        if pousada is None:
+            pousada = Pousada(**dados)
+            db.add(pousada)
 
     db.commit()
 

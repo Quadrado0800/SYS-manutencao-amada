@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from decimal import Decimal
 
 from sqlalchemy import (
     Boolean,
@@ -329,7 +330,7 @@ class Manutencao(Base):
         nullable=True
     )
 
-    valor: Mapped[float | None] = mapped_column(
+    valor: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True
     )
